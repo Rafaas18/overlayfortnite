@@ -22,6 +22,12 @@ public sealed class ClassCount
 
     /// <summary>Live openings done by someone on the recording player's team.</summary>
     public int LiveBySquad { get; set; }
+
+    /// <summary>Containers whose loot popped out next to someone on the recording player's team.</summary>
+    public int NearSquad { get; set; }
+
+    /// <summary>Containers whose loot popped out next to the recording player.</summary>
+    public int NearMe { get; set; }
 }
 
 /// <summary>
@@ -47,14 +53,31 @@ public sealed class MatchResult
 
     public List<ClassCount> Classes { get; set; } = new();
 
+    /// <summary>True when the replay had player positions, which NearSquad / NearMe need.</summary>
+    public bool HasPositions { get; set; }
+
+    /// <summary>Diagnostics: position samples of the recording player and of the whole team, loot drops seen.</summary>
+    public int PositionSamplesMe { get; set; }
+    public int PositionSamplesSquad { get; set; }
+    public int LootDrops { get; set; }
+
+    /// <summary>Diagnostics: why the detailed read was not used, when it was not.</summary>
+    public string? Note { get; set; }
+
     /// <summary>Set when the replay could not be read. Counts are then empty.</summary>
     public string? Error { get; set; }
 }
 
 public enum CountMode
 {
-    /// <summary>Squad when the replay says who opened each chest, otherwise Live.</summary>
+    /// <summary>NearSquad when the replay has player positions, otherwise All.</summary>
     Auto,
+
+    /// <summary>Chests whose loot popped out next to someone on the recording player's team.</summary>
+    NearSquad,
+
+    /// <summary>Chests whose loot popped out next to the recording player.</summary>
+    NearMe,
 
     /// <summary>Only openings attributed to the recording player's team.</summary>
     Squad,
@@ -69,4 +92,4 @@ public enum CountMode
 /// <summary>
 /// Numbers for one match after applying the user's filter.
 /// </summary>
-public readonly record struct MatchCount(int Counted, int Live, int AlreadyOpen, int Squad, bool SquadKnown, CountMode ModeUsed);
+public readonly record struct MatchCount(int Counted, int Live, int AlreadyOpen, int Squad, bool SquadKnown, int NearSquad, int NearMe, bool PositionsKnown, CountMode ModeUsed);

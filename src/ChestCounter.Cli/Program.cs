@@ -90,12 +90,13 @@ foreach (var file in files)
 
     Console.WriteLine($"   {match.StartedUtc:yyyy-MM-dd HH:mm} UTC, {match.LengthMs / 60000} min, {match.GameVersion}, modo {match.Playlist ?? "?"}");
     Console.WriteLine($"   Equipo {match.RecorderTeam?.ToString() ?? "?"}: {(match.Squad.Count > 0 ? string.Join(", ", match.Squad) : "?")}");
-    Console.WriteLine($"   COFRES contados: {count.Counted} (regla {count.ModeUsed})  |  en vivo {count.Live}, del squad {(count.SquadKnown ? count.Squad.ToString() : "sin dato")}, ya abiertos {count.AlreadyOpen}");
-    Console.WriteLine("   Clases de contenedor vistas (en vivo / con autor / del squad / ya abiertos):");
+    Console.WriteLine($"   COFRES contados: {count.Counted} (regla {count.ModeUsed})  |  junto al squad {count.NearSquad}, junto a mi {count.NearMe}, vistos abiertos {count.Live + count.AlreadyOpen}");
+    Console.WriteLine($"   Datos: {match.PositionSamplesMe} posiciones mias, {match.PositionSamplesSquad} del squad, {match.LootDrops} objetos soltados por contenedores{(match.Note is null ? "" : "  |  " + match.Note)}");
+    Console.WriteLine("   Tipos de contenedor (junto al squad / junto a mi / vistos abiertos):");
     foreach (var c in match.Classes)
     {
         var mark = filter.IsMatch(c.ShortName) ? "*" : " ";
-        Console.WriteLine($"    {mark} {c.ShortName,-58} {c.Live,4} / {c.LiveAttributed,4} / {c.LiveBySquad,4} / {c.AlreadyOpen,4}");
+        Console.WriteLine($"    {mark} {c.ShortName,-58} {c.NearSquad,4} / {c.NearMe,4} / {c.Live + c.AlreadyOpen,4}");
     }
 
     if (match.Classes.Count == 0)

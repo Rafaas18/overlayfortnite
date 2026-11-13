@@ -33,7 +33,7 @@ public class SearchableContainer : INetFieldExportGroup
 public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
 {
     /// <summary>Bump when the counting rules change so cached results are parsed again.</summary>
-    public const int ParserVersion = 1;
+    public const int ParserVersion = 2;
 
     private readonly ChestTracker _tracker = new();
     private readonly Dictionary<NetFieldExportGroup, NetFieldExportGroup> _aliases = new();
@@ -42,7 +42,11 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
     private bool _inOpeningBunch;
     private string? _currentContainerPath;
 
-    public ChestReplayReader() : base(null, ParseMode.Minimal)
+    /// <param name="mode">
+    /// Full also reads player positions and dropped items, needed to tell who opened a chest.
+    /// Minimal reads only the containers.
+    /// </param>
+    public ChestReplayReader(ParseMode mode = ParseMode.Full) : base(null!, mode)
     {
     }
 
@@ -73,8 +77,17 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
 
             result.FileSize = bytes.Length;
 
-            var reader = new ChestReplayReader();
-            reader.Fill(bytes, result);
+            try
+            {
+                new ChestReplayReader(ParseMode.Full).Fill(bytes, result);
+            }
+            catch (Exception ex)
+            {
+                // The detailed read touches many more parts of the replay; if a game update breaks one
+                // of them, the containers alone can usually still be read.
+                new ChestReplayReader(ParseMode.Minimal).Fill(bytes, result);
+                result.Note = $"Lectura detallada fallida ({ex.GetType().Name}: {ex.Message}); sin posiciones.";
+            }
         }
         catch (Exception ex)
         {
@@ -121,7 +134,31 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
                 .ToList();
         }
 
-        result.Classes = _tracker.Build(team);
+        result.Classes = _tracker.Build(team, replay.GameData?.RecorderId);
+        result.PositionSamplesMe = _tracker.PositionSamplesMe;
+        result.PositionSamplesSquad = _tracker.PositionSamplesSquad;
+        result.LootDrops = _tracker.LootDrops;
+        result.HasPositions = _tracker.PositionSamplesSquad > 0;
+    }
+
+    public override void ReadDemoFrameIntoPlaybackPackets(FArchive archive)
+    {
+        // The frame starts with its time; peek at it so events can be placed on a clock.
+        var start = archive.Position;
+        if (archive.NetworkVersion >= NetworkVersionHistory.HISTORY_MULTIPLE_LEVELS)
+        {
+            archive.ReadInt32();
+        }
+
+        var seconds = archive.ReadSingle();
+        archive.Seek(start, SeekOrigin.Begin);
+
+        if (!float.IsNaN(seconds))
+        {
+            _tracker.OnTime(seconds);
+        }
+
+        base.ReadDemoFrameIntoPlaybackPackets(archive);
     }
 
     public override NetFieldExport? ReadNetFieldExport(FArchive archive)
@@ -238,9 +275,25 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
                 return;
 
             case PlayerPawn pawn:
-                if (pawn.PlayerState is > 0 && Channels[channelIndex]?.ActorId is { } pawnId)
+                if (Channels[channelIndex]?.ActorId is { } pawnId)
                 {
-                    _tracker.OnPawn(pawnId, pawn.PlayerState.Value);
+                    if (pawn.PlayerState is > 0)
+                    {
+                        _tracker.OnPawn(pawnId, pawn.PlayerState.Value);
+                    }
+
+                    if (pawn.ReplicatedMovement?.Location is { } at)
+                    {
+                        _tracker.OnPawnPosition(pawnId, at.X, at.Y, at.Z);
+                    }
+                }
+                break;
+
+            case FortPickup pickup:
+                // A new item that starts its flight somewhere and was not dropped by a player came out of a container.
+                if (_inOpeningBunch && pickup.LootInitialPosition is { } from && pickup.PawnWhoDroppedPickup is not > 0)
+                {
+                    _tracker.OnLootDrop(from.X, from.Y, from.Z);
                 }
                 break;
 
