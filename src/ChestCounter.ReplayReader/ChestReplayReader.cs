@@ -142,6 +142,8 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
         result.PositionSamplesMe = _tracker.PositionSamplesMe;
         result.PositionSamplesSquad = _tracker.PositionSamplesSquad;
         result.LootDrops = _tracker.LootDrops;
+        result.PilesNearSquad = _tracker.PilesNearSquad;
+        result.PilesNearMe = _tracker.PilesNearMe;
         result.HasPositions = _tracker.PositionSamplesSquad > 0;
         LastDiagnostics = _tracker.DescribeLootNearRecorder(replay.GameData?.RecorderId);
     }
@@ -298,7 +300,7 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
                 // A new item that starts its flight somewhere and was not dropped by a player came out of a container.
                 if (_inOpeningBunch && pickup.LootInitialPosition is { } from && pickup.PawnWhoDroppedPickup is not > 0)
                 {
-                    _tracker.OnLootDrop(from.X, from.Y, from.Z);
+                    _tracker.OnLootDrop(from.X, from.Y, from.Z, pickup.bTossedFromContainer == true);
                 }
                 break;
 

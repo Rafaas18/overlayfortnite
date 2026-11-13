@@ -61,6 +61,10 @@ public sealed class MatchResult
     public int PositionSamplesSquad { get; set; }
     public int LootDrops { get; set; }
 
+    /// <summary>Containers of any kind whose loot popped out next to a squad member / the recording player.</summary>
+    public int PilesNearSquad { get; set; }
+    public int PilesNearMe { get; set; }
+
     /// <summary>Diagnostics: why the detailed read was not used, when it was not.</summary>
     public string? Note { get; set; }
 

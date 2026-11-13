@@ -16,6 +16,7 @@ public sealed class ChestTracker
     public const float PositionMaxAgeSeconds = 3f;
 
     private const float PositionSampleSeconds = 0.25f;
+    private const float PileSeconds = 5f;
 
     private sealed class ContainerState
     {
@@ -32,6 +33,7 @@ public sealed class ChestTracker
     {
         public float Time;
         public double X, Y, Z;
+        public bool FromContainer;
         public bool Claimed;
     }
 
@@ -125,7 +127,43 @@ public sealed class ChestTracker
     }
 
     /// <summary>An item popped out of a container at this position (the container's position).</summary>
-    public void OnLootDrop(double x, double y, double z) => _loot.Add(new LootDrop { Time = _time, X = x, Y = y, Z = z });
+    /// <param name="fromContainer">True when the game flags the item as tossed out of a container.</param>
+    public void OnLootDrop(double x, double y, double z, bool fromContainer = true) =>
+        _loot.Add(new LootDrop { Time = _time, X = x, Y = y, Z = z, FromContainer = fromContainer });
+
+    /// <summary>Containers (any kind) whose loot popped out next to a squad member / the recording player. Set by Build.</summary>
+    public int PilesNearSquad { get; private set; }
+    public int PilesNearMe { get; private set; }
+
+    /// <summary>
+    /// Groups items that came out of the same container (same starting point, same moment) and
+    /// counts the groups that started next to the squad.
+    /// </summary>
+    private void CountPiles(List<List<Sample>> squadPawns, List<List<Sample>> myPawns)
+    {
+        PilesNearSquad = 0;
+        PilesNearMe = 0;
+        var piles = new List<LootDrop>();
+
+        foreach (var drop in _loot.Where(d => d.FromContainer).OrderBy(d => d.Time))
+        {
+            if (piles.Any(p => drop.Time - p.Time <= PileSeconds && Distance(p.X, p.Y, p.Z, drop.X, drop.Y, drop.Z) <= 100))
+            {
+                continue;
+            }
+
+            piles.Add(drop);
+
+            if (NearestDistance(squadPawns, drop) <= NearDistance)
+            {
+                PilesNearSquad++;
+                if (NearestDistance(myPawns, drop) <= NearDistance)
+                {
+                    PilesNearMe++;
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// Builds the per-class totals.
@@ -159,6 +197,7 @@ public sealed class ChestTracker
 
         PositionSamplesMe = myPawns.Sum(s => s.Count);
         PositionSamplesSquad = squadPawns.Sum(s => s.Count);
+        CountPiles(squadPawns, myPawns);
 
         foreach (var e in _events.OrderBy(e => e.Time))
         {
@@ -336,7 +375,8 @@ public sealed class ChestTracker
                 continue;
             }
 
-            var items = _loot.Count(o => Math.Abs(o.Time - drop.Time) <= 5 && Distance(o.X, o.Y, o.Z, drop.X, drop.Y, drop.Z) <= 100);
+            var same = _loot.Where(o => Math.Abs(o.Time - drop.Time) <= 5 && Distance(o.X, o.Y, o.Z, drop.X, drop.Y, drop.Z) <= 100).ToList();
+            var items = $"{same.Count} ({same.Count(o => o.FromContainer)} de contenedor)";
             var closest = _events.OrderBy(e => Math.Abs(e.Time - drop.Time)).FirstOrDefault();
             var delta = closest is null ? "sin contenedores" : $"{closest.Time - drop.Time:+0.0;-0.0}s {ShortNameOf(closest.ClassPath)}{(closest.Live ? " (en vivo)" : "")}";
             lines.Add($"t={drop.Time,7:0.0}s  {items} objetos a {distance / 100:0.0} m de mi  |  contenedor mas cercano en el tiempo: {delta}");
