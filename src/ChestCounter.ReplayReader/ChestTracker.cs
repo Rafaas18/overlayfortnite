@@ -310,6 +310,41 @@ public sealed class ChestTracker
         return Math.Sqrt(dx * dx + dy * dy + dz * dz);
     }
 
+    /// <summary>
+    /// Diagnostics: every pile of loot that popped out next to the recording player, with the time
+    /// distance to the closest container that was seen opening. Call after <see cref="Build"/>.
+    /// </summary>
+    public List<string> DescribeLootNearRecorder(uint? recorderState)
+    {
+        var lines = new List<string>();
+        var mine = _pawnPositions
+            .Where(p => recorderState is not null && _pawnToState.TryGetValue(p.Key, out var st) && st == recorderState)
+            .Select(p => p.Value).ToList();
+
+        var seen = new List<LootDrop>();
+        foreach (var drop in _loot.OrderBy(d => d.Time))
+        {
+            if (seen.Any(o => Math.Abs(o.Time - drop.Time) <= 5 && Distance(o.X, o.Y, o.Z, drop.X, drop.Y, drop.Z) <= 100))
+            {
+                continue;
+            }
+
+            seen.Add(drop);
+            var distance = NearestDistance(mine, drop);
+            if (distance > 1500)
+            {
+                continue;
+            }
+
+            var items = _loot.Count(o => Math.Abs(o.Time - drop.Time) <= 5 && Distance(o.X, o.Y, o.Z, drop.X, drop.Y, drop.Z) <= 100);
+            var closest = _events.OrderBy(e => Math.Abs(e.Time - drop.Time)).FirstOrDefault();
+            var delta = closest is null ? "sin contenedores" : $"{closest.Time - drop.Time:+0.0;-0.0}s {ShortNameOf(closest.ClassPath)}{(closest.Live ? " (en vivo)" : "")}";
+            lines.Add($"t={drop.Time,7:0.0}s  {items} objetos a {distance / 100:0.0} m de mi  |  contenedor mas cercano en el tiempo: {delta}");
+        }
+
+        return lines;
+    }
+
     public static string ShortNameOf(string classPath)
     {
         var i = classPath.LastIndexOfAny(new[] { '.', '/' });

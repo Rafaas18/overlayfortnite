@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           git clone --depth 1 https://github.com/Shiqan/FortniteReplayDecompressor.git "$RUNNER_TEMP/samples"
-          dotnet run --project src/ChestCounter.Cli --configuration Release --no-build -- "$RUNNER_TEMP/samples/src/ConsoleReader/Replays" --pattern "Chest"
+          dotnet run --project src/ChestCounter.Cli --configuration Release --no-build -- "$RUNNER_TEMP/samples/src/ConsoleReader/Replays" --pattern "Chest" --debug
 
       - name: Publish overlay
         run: >

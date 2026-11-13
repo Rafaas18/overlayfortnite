@@ -6,9 +6,11 @@ using ChestCounter;
 //   ChestCounter.Cli                      -> every replay in Fortnite's replay folder
 //   ChestCounter.Cli <file-or-folder>...  -> those replays
 //   --json                                -> machine readable output
+//   --debug                               -> also list the loot that popped out next to the recording player
 //   --pattern <regex>                     -> which container classes count as chests (default: Chest)
 
 var json = false;
+var debug = false;
 var pattern = Counting.DefaultChestPattern;
 var inputs = new List<string>();
 
@@ -18,6 +20,9 @@ for (var i = 0; i < args.Length; i++)
     {
         case "--json":
             json = true;
+            break;
+        case "--debug":
+            debug = true;
             break;
         case "--pattern" when i + 1 < args.Length:
             pattern = args[++i];
@@ -102,6 +107,15 @@ foreach (var file in files)
     if (match.Classes.Count == 0)
     {
         Console.WriteLine("      (ninguna)");
+    }
+
+    if (debug && ChestReplayReader.LastDiagnostics is { } lines)
+    {
+        Console.WriteLine("   Botin que salio cerca de mi:");
+        foreach (var line in lines)
+        {
+            Console.WriteLine("      " + line);
+        }
     }
 }
 

@@ -35,6 +35,10 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
     /// <summary>Bump when the counting rules change so cached results are parsed again.</summary>
     public const int ParserVersion = 2;
 
+    /// <summary>Diagnostics of the last file read on this thread, for the command line tool.</summary>
+    [ThreadStatic]
+    public static List<string>? LastDiagnostics;
+
     private readonly ChestTracker _tracker = new();
     private readonly Dictionary<NetFieldExportGroup, NetFieldExportGroup> _aliases = new();
     private readonly HashSet<NetFieldExportGroup> _notContainers = new();
@@ -139,6 +143,7 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
         result.PositionSamplesSquad = _tracker.PositionSamplesSquad;
         result.LootDrops = _tracker.LootDrops;
         result.HasPositions = _tracker.PositionSamplesSquad > 0;
+        LastDiagnostics = _tracker.DescribeLootNearRecorder(replay.GameData?.RecorderId);
     }
 
     public override void ReadDemoFrameIntoPlaybackPackets(FArchive archive)
