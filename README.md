@@ -28,8 +28,8 @@ dotnet run --project src/ChestCounter.Overlay --configuration Release
 ## Uso
 
 Al abrirlo lee todos los replays de `%LOCALAPPDATA%\FortniteGame\Saved\Demos` y después revisa
-la carpeta cada pocos segundos. La partida en curso se vuelve a leer cada 45 segundos, así que el
-número sube durante la partida con ese retraso.
+la carpeta cada pocos segundos. Fortnite cifra el replay y solo guarda la clave cuando sales de la
+partida, así que los cofres de una partida aparecen **al volver a la sala**, no durante el juego.
 
 - **Arrastrar** con el botón izquierdo: mover el overlay.
 - **Clic derecho**: opciones.

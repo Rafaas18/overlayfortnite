@@ -68,6 +68,12 @@ public sealed class MatchResult
     /// <summary>Diagnostics: why the detailed read was not used, when it was not.</summary>
     public string? Note { get; set; }
 
+    /// <summary>
+    /// True when Fortnite has not closed the replay yet. Until it does, the file has no decryption key
+    /// and cannot be read; that happens when the player leaves the match.
+    /// </summary>
+    public bool NotFinalized { get; set; }
+
     /// <summary>Set when the replay could not be read. Counts are then empty.</summary>
     public string? Error { get; set; }
 }

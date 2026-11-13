@@ -87,6 +87,10 @@ foreach (var file in files)
     if (match.Error is not null)
     {
         Console.WriteLine($"   ERROR: {match.Error}");
+        if (match.NotFinalized)
+        {
+            Console.WriteLine("   Fortnite todavia no cerro este replay (lo hace al salir de la partida). Vuelve a la sala y ejecuta de nuevo.");
+        }
         continue;
     }
 

@@ -48,7 +48,7 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
             {
                 if (rows.Count < RecentRows)
                 {
-                    rows.Add(new RecentRow(FormatWhen(match), "no se pudo leer", "–"));
+                    rows.Add(new RecentRow(FormatWhen(match), match.NotFinalized ? "sin cerrar: vuelve a la sala" : "no se pudo leer", "–"));
                 }
 
                 continue;

@@ -96,6 +96,7 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
         catch (Exception ex)
         {
             result.Error = $"{ex.GetType().Name}: {ex.Message}";
+            result.NotFinalized = ex.Message.Contains("not yet marked as completed", StringComparison.OrdinalIgnoreCase);
         }
 
         return result;
