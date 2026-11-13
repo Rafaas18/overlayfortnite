@@ -47,7 +47,9 @@ public static class Counting
         var used = mode;
         if (mode == CountMode.Auto)
         {
-            used = match.HasPositions ? CountMode.NearSquad : CountMode.All;
+            // Measured on sample replays: the position-based modes miss most chests (0 to 6 per match),
+            // so they stay opt-in until they can be calibrated against matches with a known count.
+            used = CountMode.All;
         }
 
         var counted = used switch

@@ -56,8 +56,11 @@ Para cada contenedor el overlay distingue:
 
 Modos de conteo:
 
-- **Todos los que se ven abiertos** (por defecto): *abiertos a la vista* + *ya abiertos*.
-- **Abiertos a la vista**, **Solo los de mi squad**, **Automático** (squad si el replay trae el dato, si no a la vista).
+- **Todos los que se ven abiertos** (por defecto): *abiertos a la vista* + *ya abiertos*. Es un máximo.
+- **Junto a mi squad** / **Junto a mí** (experimentales): solo cofres cuyo botín sale a menos de 6 m de un
+  jugador de tu equipo en el momento en que el cofre aparece abierto. En los replays de prueba cuentan de
+  menos (0 a 6 por partida), porque el aviso de «cofre abierto» y el botín casi nunca llegan a la vez.
+- **Abiertos a la vista**.
 
 Por qué el modo por defecto es el más amplio: el juego solo empieza a enviar un cofre cuando cambia,
 así que la mayoría de los cofres que abres llegan al replay directamente como «ya abiertos», igual que

@@ -61,7 +61,7 @@ public sealed class MatchResult
     public int PositionSamplesSquad { get; set; }
     public int LootDrops { get; set; }
 
-    /// <summary>Containers of any kind whose loot popped out next to a squad member / the recording player.</summary>
+    /// <summary>Diagnostics: piles of loot (containers, eliminations...) that popped out next to a squad member / the recording player.</summary>
     public int PilesNearSquad { get; set; }
     public int PilesNearMe { get; set; }
 
@@ -74,7 +74,7 @@ public sealed class MatchResult
 
 public enum CountMode
 {
-    /// <summary>NearSquad when the replay has player positions, otherwise All.</summary>
+    /// <summary>Currently the same as All.</summary>
     Auto,
 
     /// <summary>Chests whose loot popped out next to someone on the recording player's team.</summary>

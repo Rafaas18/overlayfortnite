@@ -131,7 +131,7 @@ public sealed class ChestTracker
     public void OnLootDrop(double x, double y, double z, bool fromContainer = true) =>
         _loot.Add(new LootDrop { Time = _time, X = x, Y = y, Z = z, FromContainer = fromContainer });
 
-    /// <summary>Containers (any kind) whose loot popped out next to a squad member / the recording player. Set by Build.</summary>
+    /// <summary>Diagnostics: piles of loot that popped out next to a squad member / the recording player. Set by Build.</summary>
     public int PilesNearSquad { get; private set; }
     public int PilesNearMe { get; private set; }
 
@@ -145,7 +145,9 @@ public sealed class ChestTracker
         PilesNearMe = 0;
         var piles = new List<LootDrop>();
 
-        foreach (var drop in _loot.Where(d => d.FromContainer).OrderBy(d => d.Time))
+        // The game's "tossed from container" flag is missing in recent replays, so every pile counts:
+        // this also includes loot dropped by eliminated players.
+        foreach (var drop in _loot.OrderBy(d => d.Time))
         {
             if (piles.Any(p => drop.Time - p.Time <= PileSeconds && Distance(p.X, p.Y, p.Z, drop.X, drop.Y, drop.Z) <= 100))
             {

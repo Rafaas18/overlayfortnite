@@ -178,16 +178,15 @@ public class CountingTests
     }
 
     [Fact]
-    public void Auto_counts_chests_next_to_the_squad_when_the_replay_has_positions_and_everything_seen_otherwise()
+    public void Auto_counts_everything_seen_open_and_position_modes_are_opt_in()
     {
         var filter = Counting.BuildFilter(null);
         var chests = new ClassCount { ClassPath = "/Game/Chest_A", ShortName = "Chest_A", Live = 1, AlreadyOpen = 9, NearSquad = 4, NearMe = 3 };
 
         var withPositions = Match(chests);
         withPositions.HasPositions = true;
-        var near = Counting.Count(withPositions, filter, CountMode.Auto);
-        Assert.Equal(CountMode.NearSquad, near.ModeUsed);
-        Assert.Equal(4, near.Counted);
+        Assert.Equal(CountMode.All, Counting.Count(withPositions, filter, CountMode.Auto).ModeUsed);
+        Assert.Equal(4, Counting.Count(withPositions, filter, CountMode.NearSquad).Counted);
         Assert.Equal(3, Counting.Count(withPositions, filter, CountMode.NearMe).Counted);
 
         var without = Counting.Count(Match(chests), filter, CountMode.Auto);
