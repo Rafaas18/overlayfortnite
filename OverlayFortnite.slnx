@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ChestCounter.ReplayReader/ChestCounter.ReplayReader.csproj" />
+    <Project Path="src/ChestCounter.Cli/ChestCounter.Cli.csproj" />
+    <Project Path="src/ChestCounter.Overlay/ChestCounter.Overlay.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ChestCounter.Tests/ChestCounter.Tests.csproj" />
+  </Folder>
+</Solution>

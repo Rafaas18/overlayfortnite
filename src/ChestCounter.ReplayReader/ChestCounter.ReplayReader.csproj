@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- The assembly name must contain "ReplayReader": the parser library only scans
+         assemblies with that text in their name for export types (SearchableContainer). -->
+    <AssemblyName>ChestCounter.ReplayReader</AssemblyName>
+    <RootNamespace>ChestCounter</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="FortniteReplayReader" Version="3.1.0" />
+  </ItemGroup>
+</Project>
