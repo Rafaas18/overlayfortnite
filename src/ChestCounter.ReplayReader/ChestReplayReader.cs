@@ -277,8 +277,13 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
             case SearchableContainer container:
                 if (Channels[channelIndex]?.ActorId is { } containerId && _currentContainerPath is not null)
                 {
+                    // Containers placed by the map have no position in the replay; spawned ones do.
+                    var spot = Channels[channelIndex]?.Actor?.Location;
+                    (double, double, double)? at = spot is not null && (spot.X != 0 || spot.Y != 0 || spot.Z != 0)
+                        ? (spot.X, spot.Y, spot.Z)
+                        : null;
                     _tracker.OnContainerUpdate(containerId, _currentContainerPath, _inOpeningBunch,
-                        container.bAlreadySearched, container.SearchingPawn);
+                        container.bAlreadySearched, container.SearchingPawn, at);
                 }
                 return;
 

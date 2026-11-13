@@ -115,7 +115,7 @@ foreach (var file in files)
 
     if (debug && ChestReplayReader.LastDiagnostics is { } lines)
     {
-        Console.WriteLine("   Botin que salio cerca de mi:");
+        Console.WriteLine("   Diagnostico (posiciones, botin y contenedores cerca de mi):");
         foreach (var line in lines)
         {
             Console.WriteLine("      " + line);

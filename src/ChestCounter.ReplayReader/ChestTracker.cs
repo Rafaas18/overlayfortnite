@@ -25,7 +25,7 @@ public sealed class ChestTracker
         public uint? LastSearcherPawn;
     }
 
-    private sealed record OpenEvent(float Time, string ClassPath, bool Live, uint? SearcherPawn, uint? SearcherState);
+    private sealed record OpenEvent(float Time, string ClassPath, bool Live, uint? SearcherPawn, uint? SearcherState, (double X, double Y, double Z)? At);
 
     private readonly record struct Sample(float Time, double X, double Y, double Z);
 
@@ -69,7 +69,8 @@ public sealed class ChestTracker
     /// </param>
     /// <param name="searched">New value of bAlreadySearched, null when the update did not touch it.</param>
     /// <param name="searchingPawn">Pawn currently searching, null when the update did not touch it.</param>
-    public void OnContainerUpdate(uint actorId, string classPath, bool openingBunch, bool? searched, uint? searchingPawn)
+    public void OnContainerUpdate(uint actorId, string classPath, bool openingBunch, bool? searched, uint? searchingPawn,
+        (double X, double Y, double Z)? at = null)
     {
         if (!_containers.TryGetValue(actorId, out var state))
         {
@@ -92,7 +93,7 @@ public sealed class ChestTracker
             var pawn = live ? state.LastSearcherPawn : null;
             uint? searcherState = pawn is { } p && _pawnToState.TryGetValue(p, out var s) ? s : null;
 
-            _events.Add(new OpenEvent(_time, classPath, live, pawn, searcherState));
+            _events.Add(new OpenEvent(_time, classPath, live, pawn, searcherState, at));
         }
         else if (searched == false && state.Opened)
         {
@@ -361,6 +362,33 @@ public sealed class ChestTracker
         var mine = _pawnPositions
             .Where(p => recorderState is not null && _pawnToState.TryGetValue(p.Key, out var st) && st == recorderState)
             .Select(p => p.Value).ToList();
+
+        var allMine = mine.SelectMany(m => m).ToList();
+        lines.Add(allMine.Count == 0
+            ? "Mis posiciones: ninguna"
+            : $"Mis posiciones: {allMine.Count} muestras entre t={allMine.Min(m => m.Time):0}s y t={allMine.Max(m => m.Time):0}s, " +
+              $"X {allMine.Min(m => m.X):0}..{allMine.Max(m => m.X):0}, Y {allMine.Min(m => m.Y):0}..{allMine.Max(m => m.Y):0}, Z {allMine.Min(m => m.Z):0}..{allMine.Max(m => m.Z):0}");
+
+        var lootDistances = _loot.Select(d => NearestDistance(mine, d)).ToList();
+        var lootKnown = lootDistances.Where(d => d < double.MaxValue).ToList();
+        lines.Add($"Botin: {_loot.Count} objetos, {lootKnown.Count} con mi posicion conocida en ese momento; a <6 m {lootKnown.Count(d => d <= 600)}, <15 m {lootKnown.Count(d => d <= 1500)}, <50 m {lootKnown.Count(d => d <= 5000)}" +
+                  (lootKnown.Count > 0 ? $", minima {lootKnown.Min() / 100:0.0} m" : "") +
+                  (_loot.Count > 0 ? $"  |  X {_loot.Min(d => d.X):0}..{_loot.Max(d => d.X):0}, Y {_loot.Min(d => d.Y):0}..{_loot.Max(d => d.Y):0}" : ""));
+
+        var placed = _events.Where(e => e.At is not null).ToList();
+        var placedDistances = placed
+            .Select(e => (Event: e, Distance: NearestDistance(mine, new LootDrop { Time = e.Time, X = e.At!.Value.X, Y = e.At.Value.Y, Z = e.At.Value.Z })))
+            .ToList();
+        lines.Add($"Contenedores abiertos: {_events.Count}, {placed.Count} con posicion propia; de esos, con mi posicion conocida {placedDistances.Count(p => p.Distance < double.MaxValue)}, a <6 m de mi {placedDistances.Count(p => p.Distance <= 600)}, <15 m {placedDistances.Count(p => p.Distance <= 1500)}, <50 m {placedDistances.Count(p => p.Distance <= 5000)}");
+        foreach (var group in placed.GroupBy(e => ShortNameOf(e.ClassPath)))
+        {
+            lines.Add($"   con posicion: {group.Key} x{group.Count()}");
+        }
+
+        foreach (var (e, distance) in placedDistances.Where(p => p.Distance <= 1500).OrderBy(p => p.Event.Time).Take(80))
+        {
+            lines.Add($"t={e.Time,7:0.0}s  {ShortNameOf(e.ClassPath)} abierto a {distance / 100:0.0} m de mi{(e.Live ? " (en vivo)" : "")}");
+        }
 
         var seen = new List<LootDrop>();
         foreach (var drop in _loot.OrderBy(d => d.Time))

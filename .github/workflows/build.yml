@@ -34,6 +34,11 @@ jobs:
           git clone --depth 1 https://github.com/Shiqan/FortniteReplayDecompressor.git "$RUNNER_TEMP/samples"
           dotnet run --project src/ChestCounter.Cli --configuration Release --no-build -- "$RUNNER_TEMP/samples/src/ConsoleReader/Replays" --pattern "Chest" --debug
 
+      # Replays committed to the repository for calibration, when there are any.
+      - name: Read replays in samples
+        if: hashFiles('samples/*.replay') != ''
+        run: dotnet run --project src/ChestCounter.Cli --configuration Release --no-build -- samples --debug
+
       - name: Publish overlay
         run: >
           dotnet publish src/ChestCounter.Overlay/ChestCounter.Overlay.csproj --configuration Release
