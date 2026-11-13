@@ -1,0 +1,54 @@
+name: Build
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      - name: Build
+        run: dotnet build OverlayFortnite.slnx --configuration Release
+
+      - name: Test
+        run: dotnet test tests/ChestCounter.Tests/ChestCounter.Tests.csproj --configuration Release --no-build
+
+      # Real replays from the parser library's repository, to check the reader end to end.
+      - name: Read sample replays
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/Shiqan/FortniteReplayDecompressor.git "$RUNNER_TEMP/samples"
+          dotnet run --project src/ChestCounter.Cli --configuration Release --no-build -- "$RUNNER_TEMP/samples/src/ConsoleReader/Replays" --pattern "Chest"
+
+      - name: Publish overlay
+        run: >
+          dotnet publish src/ChestCounter.Overlay/ChestCounter.Overlay.csproj --configuration Release
+          --runtime win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          --output publish/OverlayCofres
+
+      - name: Publish diagnostic tool
+        run: >
+          dotnet publish src/ChestCounter.Cli/ChestCounter.Cli.csproj --configuration Release
+          --runtime win-x64 --self-contained true -p:PublishSingleFile=true
+          --output publish/OverlayCofres
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OverlayCofres-windows
+          path: publish/OverlayCofres
+          if-no-files-found: error
