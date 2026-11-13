@@ -56,15 +56,23 @@ Para cada contenedor el overlay distingue:
 
 Modos de conteo:
 
-- **Automático** (por defecto): usa *Del squad* si el replay trae ese dato en la mayoría de los cofres; si no, *Abiertos a la vista*.
-- **Solo los de mi squad**, **Abiertos a la vista**, **Todos los que se ven abiertos** (suma también los *ya abiertos*).
+- **Todos los que se ven abiertos** (por defecto): *abiertos a la vista* + *ya abiertos*. Es un máximo.
+- **Junto a mi squad** / **Junto a mí** (experimentales): solo cofres cuyo botín sale a menos de 6 m de un
+  jugador de tu equipo en el momento en que el cofre aparece abierto. En los replays de prueba cuentan de
+  menos (0 a 6 por partida), porque el aviso de «cofre abierto» y el botín casi nunca llegan a la vez.
+- **Abiertos a la vista**.
+
+Por qué el modo por defecto es el más amplio: el juego solo empieza a enviar un cofre cuando cambia,
+así que la mayoría de los cofres que abres llegan al replay directamente como «ya abiertos», igual que
+los que abrió otro antes de que llegaras. En replays reales de prueba, una partida de 15–20 minutos da
+entre 40 y 80 cofres «ya abiertos» y solo de 0 a 4 «a la vista».
 
 Límites que conviene conocer:
 
-- Los cofres que abre un compañero lejos de ti no están en tu replay. Para contar todo el squad
-  sin huecos, cada jugador tendría que usar el overlay y sumar; si jugáis juntos, se contarían dos veces
-  los que abre uno al lado del otro.
-- Sin el dato de quién abrió, un cofre abierto por un rival junto a ti cuenta igual que uno tuyo.
+- El total por defecto es un **máximo**: incluye cofres abiertos por rivales en las zonas por las que pasas.
+  Los otros modos se quedan cortos. Con los datos del replay analizados hasta ahora no se puede separar con
+  exactitud «lo abrió mi squad» de «lo abrió otro».
+- Los cofres que abre un compañero lejos de ti no están en tu replay.
 - Se considera cofre todo contenedor cuyo nombre interno contiene `Chest`. Si la temporada usa otro
   nombre para algún cofre especial, aparece en *Ver partidas…* y se añade al patrón, por ejemplo `Chest|Treasure`.
 

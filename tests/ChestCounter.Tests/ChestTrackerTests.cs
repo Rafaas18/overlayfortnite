@@ -82,6 +82,69 @@ public class ChestTrackerTests
     }
 
     [Fact]
+    public void Chest_whose_loot_pops_out_next_to_me_or_a_teammate_is_attributed_by_distance()
+    {
+        var tracker = new ChestTracker();
+        tracker.OnPlayerTeam(100, 3); // me
+        tracker.OnPlayerTeam(101, 3); // teammate
+        tracker.OnPlayerTeam(200, 7); // enemy
+        tracker.OnPawn(1000, 100);
+        tracker.OnPawn(1001, 101);
+        tracker.OnPawn(2000, 200);
+
+        tracker.OnTime(10);
+        tracker.OnPawnPosition(1000, 0, 0, 0);
+        tracker.OnPawnPosition(1001, 5000, 0, 0);
+        tracker.OnPawnPosition(2000, 20000, 0, 0);
+
+        // I open a chest two metres away: the chest shows up searched and three items pop out of it.
+        tracker.OnTime(10.5f);
+        tracker.OnContainerUpdate(11, Chest, openingBunch: true, searched: true, searchingPawn: null);
+        tracker.OnLootDrop(200, 0, 0);
+        tracker.OnLootDrop(200, 0, 0);
+        tracker.OnLootDrop(200, 0, 0);
+
+        // In the same instant a chest someone else emptied earlier comes into view: no loot of its own.
+        tracker.OnContainerUpdate(12, Chest, true, true, null);
+
+        // My teammate opens one next to them, far from me.
+        tracker.OnTime(20);
+        tracker.OnPawnPosition(1000, 0, 0, 0);
+        tracker.OnPawnPosition(1001, 5000, 0, 0);
+        tracker.OnContainerUpdate(13, Chest, true, true, null);
+        tracker.OnLootDrop(5100, 0, 0);
+
+        // An enemy opens one next to them.
+        tracker.OnTime(30);
+        tracker.OnPawnPosition(1000, 0, 0, 0);
+        tracker.OnPawnPosition(2000, 20000, 0, 0);
+        tracker.OnContainerUpdate(14, Chest, true, true, null);
+        tracker.OnLootDrop(20100, 0, 0);
+
+        var chest = Assert.Single(tracker.Build(recorderTeam: 3, recorderState: 100));
+        Assert.Equal(4, chest.AlreadyOpen);
+        Assert.Equal(2, chest.NearSquad);
+        Assert.Equal(1, chest.NearMe);
+        Assert.True(tracker.PositionSamplesMe > 0);
+    }
+
+    [Fact]
+    public void Old_position_does_not_prove_i_was_next_to_the_chest()
+    {
+        var tracker = new ChestTracker();
+        tracker.OnPlayerTeam(100, 3);
+        tracker.OnPawn(1000, 100);
+        tracker.OnTime(10);
+        tracker.OnPawnPosition(1000, 0, 0, 0);
+
+        tracker.OnTime(60);
+        tracker.OnContainerUpdate(11, Chest, true, true, null);
+        tracker.OnLootDrop(100, 0, 0);
+
+        Assert.Equal(0, Assert.Single(tracker.Build(3, 100)).NearSquad);
+    }
+
+    [Fact]
     public void Classes_are_reported_separately()
     {
         var tracker = new ChestTracker();
@@ -115,17 +178,20 @@ public class CountingTests
     }
 
     [Fact]
-    public void Auto_uses_squad_only_when_most_openings_have_an_author()
+    public void Auto_counts_everything_seen_open_and_position_modes_are_opt_in()
     {
         var filter = Counting.BuildFilter(null);
+        var chests = new ClassCount { ClassPath = "/Game/Chest_A", ShortName = "Chest_A", Live = 1, AlreadyOpen = 9, NearSquad = 4, NearMe = 3 };
 
-        var known = Counting.Count(Match(Class("Chest_A", 10, 0, attributed: 8, squad: 6)), filter, CountMode.Auto);
-        Assert.Equal(CountMode.Squad, known.ModeUsed);
-        Assert.Equal(6, known.Counted);
+        var withPositions = Match(chests);
+        withPositions.HasPositions = true;
+        Assert.Equal(CountMode.All, Counting.Count(withPositions, filter, CountMode.Auto).ModeUsed);
+        Assert.Equal(4, Counting.Count(withPositions, filter, CountMode.NearSquad).Counted);
+        Assert.Equal(3, Counting.Count(withPositions, filter, CountMode.NearMe).Counted);
 
-        var unknown = Counting.Count(Match(Class("Chest_A", 10, 0, attributed: 2, squad: 2)), filter, CountMode.Auto);
-        Assert.Equal(CountMode.Live, unknown.ModeUsed);
-        Assert.Equal(10, unknown.Counted);
+        var without = Counting.Count(Match(chests), filter, CountMode.Auto);
+        Assert.Equal(CountMode.All, without.ModeUsed);
+        Assert.Equal(10, without.Counted);
     }
 
     [Fact]

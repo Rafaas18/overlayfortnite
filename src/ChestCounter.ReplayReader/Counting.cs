@@ -24,7 +24,7 @@ public static class Counting
 
     public static MatchCount Count(MatchResult match, Regex filter, CountMode mode)
     {
-        int live = 0, already = 0, squad = 0, attributed = 0;
+        int live = 0, already = 0, squad = 0, attributed = 0, nearSquad = 0, nearMe = 0;
 
         foreach (var c in match.Classes)
         {
@@ -37,6 +37,8 @@ public static class Counting
             already += c.AlreadyOpen;
             squad += c.LiveBySquad;
             attributed += c.LiveAttributed;
+            nearSquad += c.NearSquad;
+            nearMe += c.NearMe;
         }
 
         // The squad number is only trustworthy when most openings say who did them.
@@ -45,16 +47,20 @@ public static class Counting
         var used = mode;
         if (mode == CountMode.Auto)
         {
-            used = squadKnown ? CountMode.Squad : CountMode.Live;
+            // Measured on sample replays: the position-based modes miss most chests (0 to 6 per match),
+            // so they stay opt-in until they can be calibrated against matches with a known count.
+            used = CountMode.All;
         }
 
         var counted = used switch
         {
+            CountMode.NearSquad => nearSquad,
+            CountMode.NearMe => nearMe,
             CountMode.Squad => squad,
             CountMode.All => live + already,
             _ => live
         };
 
-        return new MatchCount(counted, live, already, squad, squadKnown, used);
+        return new MatchCount(counted, live, already, squad, squadKnown, nearSquad, nearMe, match.HasPositions, used);
     }
 }
