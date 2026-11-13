@@ -33,7 +33,7 @@ public class SearchableContainer : INetFieldExportGroup
 public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
 {
     /// <summary>Bump when the counting rules change so cached results are parsed again.</summary>
-    public const int ParserVersion = 2;
+    public const int ParserVersion = 3;
 
     /// <summary>Diagnostics of the last file read on this thread, for the command line tool.</summary>
     [ThreadStatic]
@@ -109,11 +109,11 @@ public sealed class ChestReplayReader : FortniteReplayReader.ReplayReader
 
         if (replay.Info.Timestamp > new DateTime(2017, 1, 1))
         {
-            // The replay stores UTC; only convert when the value says it is local time.
+            // Fortnite writes the recording player's local time (it matches the time in the file name).
             var timestamp = replay.Info.Timestamp;
-            result.StartedUtc = timestamp.Kind == DateTimeKind.Local
-                ? timestamp.ToUniversalTime()
-                : DateTime.SpecifyKind(timestamp, DateTimeKind.Utc);
+            result.StartedUtc = timestamp.Kind == DateTimeKind.Utc
+                ? timestamp
+                : DateTime.SpecifyKind(timestamp, DateTimeKind.Local).ToUniversalTime();
         }
 
         result.LengthMs = replay.Info.LengthInMs;
