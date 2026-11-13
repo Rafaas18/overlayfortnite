@@ -14,7 +14,11 @@ public sealed class Settings
     /// <summary>Regular expression matched against the container class name to decide what is a chest.</summary>
     public string ChestPattern { get; set; } = Counting.DefaultChestPattern;
 
-    public CountMode Mode { get; set; } = CountMode.Auto;
+    /// <summary>
+    /// All by default: in real replays most opened chests first show up already searched
+    /// (the game only starts sending a chest once it changes), so Live alone misses most of them.
+    /// </summary>
+    public CountMode Mode { get; set; } = CountMode.All;
 
     /// <summary>Chests opened before the overlay started counting (added to the total).</summary>
     public int Baseline { get; set; }
