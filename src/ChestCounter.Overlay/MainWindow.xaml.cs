@@ -234,10 +234,10 @@ public partial class MainWindow : Window
         menu.Items.Add(Item("Ajustar total…", AdjustTotal));
 
         var mode = new MenuItem { Header = "Qué cofres contar" };
-        mode.Items.Add(ModeItem("Todos los que se ven abiertos (máximo)", CountMode.Auto));
-        mode.Items.Add(ModeItem("Junto a mi squad (experimental, cuenta de menos)", CountMode.NearSquad));
-        mode.Items.Add(ModeItem("Junto a mí (experimental, cuenta de menos)", CountMode.NearMe));
-        mode.Items.Add(ModeItem("Abiertos a la vista", CountMode.Live));
+        mode.Items.Add(ModeItem("Solo los míos (recomendado)", CountMode.Auto));
+        mode.Items.Add(ModeItem("Los míos + los de mi equipo vistos", CountMode.MineAndTeam));
+        mode.Items.Add(ModeItem("Abiertos a la vista (cualquiera)", CountMode.Live));
+        mode.Items.Add(ModeItem("Todos los que se ven abiertos (máximo)", CountMode.All));
         menu.Items.Add(mode);
 
         menu.Items.Add(Item("Patrón de cofres…", EditPattern));

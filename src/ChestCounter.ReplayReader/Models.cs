@@ -23,6 +23,15 @@ public sealed class ClassCount
     /// <summary>Live openings done by someone on the recording player's team.</summary>
     public int LiveBySquad { get; set; }
 
+    /// <summary>Containers the replay says the recording player opened (SearchingPawn is one of their pawns).</summary>
+    public int Mine { get; set; }
+
+    /// <summary>Containers the replay says a teammate (not the recording player) opened.</summary>
+    public int Team { get; set; }
+
+    /// <summary>Containers whose opener is known to the replay, whoever it was.</summary>
+    public int Attributed { get; set; }
+
     /// <summary>Containers whose loot popped out next to someone on the recording player's team.</summary>
     public int NearSquad { get; set; }
 
@@ -80,8 +89,14 @@ public sealed class MatchResult
 
 public enum CountMode
 {
-    /// <summary>Currently the same as All.</summary>
+    /// <summary>Mine when the replay says who opened the chests, otherwise All.</summary>
     Auto,
+
+    /// <summary>Chests the replay says the recording player opened.</summary>
+    Mine,
+
+    /// <summary>Chests the replay says the recording player or a teammate opened.</summary>
+    MineAndTeam,
 
     /// <summary>Chests whose loot popped out next to someone on the recording player's team.</summary>
     NearSquad,
@@ -102,4 +117,5 @@ public enum CountMode
 /// <summary>
 /// Numbers for one match after applying the user's filter.
 /// </summary>
-public readonly record struct MatchCount(int Counted, int Live, int AlreadyOpen, int Squad, bool SquadKnown, int NearSquad, int NearMe, bool PositionsKnown, CountMode ModeUsed);
+public readonly record struct MatchCount(int Counted, int Live, int AlreadyOpen, int Squad, bool SquadKnown, int NearSquad, int NearMe, bool PositionsKnown, CountMode ModeUsed,
+    int Mine = 0, int Team = 0, int Attributed = 0);

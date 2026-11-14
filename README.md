@@ -56,16 +56,15 @@ Para cada contenedor el overlay distingue:
 
 Modos de conteo:
 
-- **Todos los que se ven abiertos** (por defecto): *abiertos a la vista* + *ya abiertos*. Es un máximo.
-- **Junto a mi squad** / **Junto a mí** (experimentales): solo cofres cuyo botín sale a menos de 6 m de un
-  jugador de tu equipo en el momento en que el cofre aparece abierto. En los replays de prueba cuentan de
-  menos (0 a 6 por partida), porque el aviso de «cofre abierto» y el botín casi nunca llegan a la vez.
-- **Abiertos a la vista**.
+- **Solo los míos** (por defecto): el replay guarda qué personaje abrió cada cofre (`SearchingPawn`), así que se
+  cuentan solo los que abriste tú, también los que rompes. Si un replay antiguo no trae ese dato, se usa *Todos*.
+- **Los míos + los de mi equipo vistos**: suma las aperturas de tus compañeros que llegaron a tu replay. Las de un
+  compañero lejos de ti pueden faltar, así que es un mínimo.
+- **Abiertos a la vista**: cualquier cofre que pasó de cerrado a abierto cerca de ti, lo abriera quien lo abriera.
+- **Todos los que se ven abiertos**: el máximo, incluye cofres abiertos por cualquiera antes de que llegaras.
 
-Por qué el modo por defecto es el más amplio: el juego solo empieza a enviar un cofre cuando cambia,
-así que la mayoría de los cofres que abres llegan al replay directamente como «ya abiertos», igual que
-los que abrió otro antes de que llegaras. En replays reales de prueba, una partida de 15–20 minutos da
-entre 40 y 80 cofres «ya abiertos» y solo de 0 a 4 «a la vista».
+La partida en curso se lee mientras se juega cuando Fortnite ya ha escrito la clave del replay; si todavía no
+la ha escrito, sus cofres aparecen al volver a la sala.
 
 Límites que conviene conocer:
 
@@ -92,6 +91,8 @@ ChestCounter.Cli.exe "C:\ruta\a\partida.replay" --pattern "Chest|Treasure"
 ## Estructura
 
 - `src/ChestCounter.ReplayReader`: lectura del replay (sobre [FortniteReplayReader](https://github.com/Shiqan/FortniteReplayDecompressor)), reglas de conteo, historial.
+  La atribución por `SearchingPawn` y la lectura de replays a medio grabar siguen el proyecto
+  [ChestCounter](https://github.com/xdoofy92/ChestCounter) (licencia MIT).
 - `src/ChestCounter.Overlay`: la ventana (WPF).
 - `src/ChestCounter.Cli`: herramienta de diagnóstico.
 - `tests/ChestCounter.Tests`: pruebas de las reglas de conteo y del escaneo de la carpeta.

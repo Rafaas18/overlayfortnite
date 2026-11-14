@@ -68,9 +68,12 @@ public sealed class ChestTracker
     /// True when the update came with the message that first made the actor visible.
     /// </param>
     /// <param name="searched">New value of bAlreadySearched, null when the update did not touch it.</param>
-    /// <param name="searchingPawn">Pawn currently searching, null when the update did not touch it.</param>
+    /// <param name="searchingPawn">
+    /// Pawn that searched the container (the server keeps it set afterwards), null when the update did not touch it.
+    /// </param>
+    /// <param name="destroyed">True when the container was broken instead of opened; its loot spills out too.</param>
     public void OnContainerUpdate(uint actorId, string classPath, bool openingBunch, bool? searched, uint? searchingPawn,
-        (double X, double Y, double Z)? at = null)
+        (double X, double Y, double Z)? at = null, bool? destroyed = null)
     {
         if (!_containers.TryGetValue(actorId, out var state))
         {
@@ -85,12 +88,18 @@ public sealed class ChestTracker
             state.LastSearcherPawn = searchingPawn;
         }
 
-        if (searched == true && !state.Opened)
+        // A chest broken by someone (explosion, support destroyed) gives its loot like an opened one: the server sets
+        // SearchingPawn to whoever broke it.
+        var brokenBySomeone = destroyed == true && state.LastSearcherPawn is not null;
+
+        if ((searched == true || brokenBySomeone) && !state.Opened)
         {
             state.Opened = true;
 
             var live = !openingBunch;
-            var pawn = live ? state.LastSearcherPawn : null;
+            // Keep the searcher even when the chest was first seen already open: recent replays send who opened it
+            // together with the opened state, and that is most chests.
+            var pawn = state.LastSearcherPawn;
             uint? searcherState = pawn is { } p && _pawnToState.TryGetValue(p, out var s) ? s : null;
 
             _events.Add(new OpenEvent(_time, classPath, live, pawn, searcherState, at));
@@ -221,6 +230,26 @@ public sealed class ChestTracker
                 count.NearMe++;
             }
 
+            // The pawn -> player link can arrive after the chest was opened, so retry here.
+            var searcherState = e.SearcherState;
+            if (searcherState is null && e.SearcherPawn is { } pawn && _pawnToState.TryGetValue(pawn, out var s))
+            {
+                searcherState = s;
+            }
+
+            if (searcherState is { } opener)
+            {
+                count.Attributed++;
+                if (recorderState is not null && opener == recorderState)
+                {
+                    count.Mine++;
+                }
+                else if (recorderTeam is not null && _stateTeam.TryGetValue(opener, out var openerTeam) && openerTeam == recorderTeam)
+                {
+                    count.Team++;
+                }
+            }
+
             if (!e.Live)
             {
                 count.AlreadyOpen++;
@@ -228,13 +257,6 @@ public sealed class ChestTracker
             }
 
             count.Live++;
-
-            // The pawn -> player link can arrive after the chest was opened, so retry here.
-            var searcherState = e.SearcherState;
-            if (searcherState is null && e.SearcherPawn is { } pawn && _pawnToState.TryGetValue(pawn, out var s))
-            {
-                searcherState = s;
-            }
 
             if (searcherState is { } st && _stateTeam.TryGetValue(st, out var searcherTeam))
             {

@@ -145,6 +145,38 @@ public class ChestTrackerTests
     }
 
     [Fact]
+    public void Opener_is_kept_when_a_chest_arrives_already_open_and_split_into_mine_and_team()
+    {
+        var tracker = new ChestTracker();
+        tracker.OnPlayerTeam(100, 3); // me
+        tracker.OnPlayerTeam(101, 3); // teammate
+        tracker.OnPlayerTeam(200, 7); // enemy
+        tracker.OnPawn(1000, 100);
+        tracker.OnPawn(1001, 101);
+
+        // Mine: opened state and opener arrive together in the first message about the chest.
+        tracker.OnContainerUpdate(11, Chest, openingBunch: true, searched: true, searchingPawn: 1000);
+        // Mine: opened while I was looking.
+        tracker.OnContainerUpdate(12, Chest, true, null, null);
+        tracker.OnContainerUpdate(12, Chest, false, true, 1000);
+        // Teammate.
+        tracker.OnContainerUpdate(13, Chest, true, true, 1001);
+        // Enemy, whose pawn is only linked to a player at the end of the replay.
+        tracker.OnContainerUpdate(14, Chest, true, true, 2000);
+        tracker.OnPawn(2000, 200);
+        // Opened before anyone recorded who did it.
+        tracker.OnContainerUpdate(15, Chest, true, true, null);
+        // Broken by me instead of opened.
+        tracker.OnContainerUpdate(16, Chest, false, null, 1000, destroyed: true);
+
+        var chest = Assert.Single(tracker.Build(recorderTeam: 3, recorderState: 100));
+        Assert.Equal(3, chest.Mine);
+        Assert.Equal(1, chest.Team);
+        Assert.Equal(5, chest.Attributed);
+        Assert.Equal(6, chest.Live + chest.AlreadyOpen);
+    }
+
+    [Fact]
     public void Classes_are_reported_separately()
     {
         var tracker = new ChestTracker();
@@ -192,6 +224,21 @@ public class CountingTests
         var without = Counting.Count(Match(chests), filter, CountMode.Auto);
         Assert.Equal(CountMode.All, without.ModeUsed);
         Assert.Equal(10, without.Counted);
+    }
+
+    [Fact]
+    public void Auto_counts_only_my_chests_when_the_replay_knows_who_opened_them()
+    {
+        var chests = new ClassCount { ClassPath = "/Game/Chest_A", ShortName = "Chest_A", Live = 20, AlreadyOpen = 230, Mine = 48, Team = 25, Attributed = 240 };
+        var ammo = new ClassCount { ClassPath = "/Game/Ammo_A", ShortName = "Tiered_Ammo_Athena_C", Mine = 9, Attributed = 9 };
+        var match = Match(chests, ammo);
+        var filter = Counting.BuildFilter(null);
+
+        var auto = Counting.Count(match, filter, CountMode.Auto);
+        Assert.Equal(CountMode.Mine, auto.ModeUsed);
+        Assert.Equal(48, auto.Counted);
+        Assert.Equal(73, Counting.Count(match, filter, CountMode.MineAndTeam).Counted);
+        Assert.Equal(250, Counting.Count(match, filter, CountMode.All).Counted);
     }
 
     [Fact]
