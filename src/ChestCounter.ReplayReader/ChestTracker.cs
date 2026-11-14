@@ -385,6 +385,21 @@ public sealed class ChestTracker
             .Where(p => recorderState is not null && _pawnToState.TryGetValue(p.Key, out var st) && st == recorderState)
             .Select(p => p.Value).ToList();
 
+        if (recorderState is not null)
+        {
+            var opened = _events
+                .Select(e => (e, State: e.SearcherState ?? (e.SearcherPawn is { } p && _pawnToState.TryGetValue(p, out var st) ? st : (uint?)null)))
+                .Where(x => x.State == recorderState)
+                .Select(x => x.e)
+                .OrderBy(e => e.Time)
+                .ToList();
+            lines.Add($"Abiertos por mi segun el replay: {opened.Count}");
+            foreach (var e in opened)
+            {
+                lines.Add($"   mio t={e.Time,7:0.0}s  {ShortNameOf(e.ClassPath)}{(e.Live ? " (en vivo)" : " (ya abierto al verlo)")}");
+            }
+        }
+
         var allMine = mine.SelectMany(m => m).ToList();
         lines.Add(allMine.Count == 0
             ? "Mis posiciones: ninguna"
